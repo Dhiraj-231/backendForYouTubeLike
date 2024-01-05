@@ -1,7 +1,7 @@
 import { ApiError } from "../utils/ApiError.js";
 import { User } from "../models/user.model.js";
 import uploadOnCloudinary from "../utils/cloudinary.js";
-import bcrypt from "bcrypt";
+import bcrypt, { compareSync } from "bcrypt";
 import otpGenerator from "otp-generator";
 import jwt from "jsonwebtoken";
 import dotenv from "dotenv";
@@ -102,7 +102,7 @@ export const loginUser = async (req, res) => {
         const matchPassword = await user.isPasswordCorrect(password, user.password);
         if (!matchPassword) throw new ApiError(401, "Wrong password or username");
         const { accessToken, refreshToken } = await generateAccessAndRefereshToken(user._id);
-        resd
+        res
             .status(200)
             .cookie("Accesstoken", accessToken, {
                 httpOnly: true,
@@ -320,6 +320,53 @@ export const verifyOtp = async (req, res) => {
         });
     }
 };
+export const updateUserAvatar = async (req, res) => {
+    try {
+        const avatarLocalPath = req.file?.path;
+        if (!avatarLocalPath) throw new ApiError(400, "Avatar file must be passed");
+        const avatar = await uploadOnCloudinary(avatarLocalPath);
+        console.log(avatar.url)
+        if (!avatar.url) throw new ApiError(400, "Error while uploading file");
+        const user = await User.findByIdAndUpdate(req.user._id, { avtar: avatar.url });
+        console.log("User");
+        res.status(200).json({
+            success: true,
+            message: "Profile photo update successfull"
+        })
+
+    } catch (error) {
+        res.status(400).json({
+            success: false,
+            message: error.message
+        })
+
+    }
+}
+
+export const updateUserCoverImage = async (req, res) => {
+    try {
+        const localCoverImage = req.file?.path;
+        console.log(localCoverImage)
+        if (!localCoverImage) throw new ApiError(400, "CoverIamge file must be passed");
+        const coverImage = await uploadOnCloudinary(localCoverImage);
+        console.log(coverImage.url);
+        if (!coverImage.url) throw new ApiError(400, "Error while uploading file");
+        const user = await User.findByIdAndUpdate(req.user._id, { coverImage: coverImage.url });
+        res.status(200).json({
+            success: true,
+            message: "Cover image update successfull"
+        })
+
+    } catch (error) {
+        res.status(400).json({
+            success: false,
+            message: error
+        })
+
+    }
+}
+
+
 
 export const createSession = async (req, res) => {
     if (req.user.locals.resetSession) {
