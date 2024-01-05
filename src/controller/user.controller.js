@@ -102,7 +102,7 @@ export const loginUser = async (req, res) => {
         const matchPassword = await user.isPasswordCorrect(password, user.password);
         if (!matchPassword) throw new ApiError(401, "Wrong password or username");
         const { accessToken, refreshToken } = await generateAccessAndRefereshToken(user._id);
-        res
+        resd
             .status(200)
             .cookie("Accesstoken", accessToken, {
                 httpOnly: true,
